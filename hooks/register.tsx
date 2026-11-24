@@ -23,10 +23,6 @@ const { theme } = makeColors({
         'text-secondary': '#cfd1d4',
         'text-muted': '#9c9fa5',
       },
-      // The two shades just above the page are flattened onto it: the app
-      // paints thin gutters beside the conversation with them, which showed
-      // as faint bands over the night sky.
-      stops: { 890: '#070707', 880: '#070707' },
     },
   },
 })
