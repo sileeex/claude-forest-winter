@@ -1,0 +1,5 @@
+{
+  "name": "forest-winter",
+  "owner": { "name": "sileeex" },
+  "plugins": [{ "name": "forest-winter", "source": "./" }]
+}

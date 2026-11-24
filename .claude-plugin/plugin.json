@@ -1,0 +1,16 @@
+{
+  "name": "forest-winter",
+  "version": "1.0.0",
+  "description": "A winter night behind your chats: snowy pines, snow that piles up as the context fills, a moon in its real phase, a campfire that burns while Claude works.",
+  "types": "./types/index.d.ts",
+  "license": "MIT",
+  "userConfig": {
+    "effects": {
+      "type": "string",
+      "title": "Effects",
+      "description": "\"drawing\": everything is a vector drawing, very light. \"shader\": adds a flowing aurora and snow on the message box, computed on the GPU (uses more power and can soften the picture).",
+      "options": ["drawing", "shader"],
+      "default": "drawing"
+    }
+  }
+}
