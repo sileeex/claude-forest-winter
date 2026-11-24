@@ -518,8 +518,8 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
 <stop offset="1" stop-color="#cfe0ff" stop-opacity="0"/>
 </linearGradient>
 <linearGradient id="sb" x1="0" y1="0" x2="1" y2="0">
-<stop offset="0" stop-color="${GROUND}" stop-opacity="0.82"/>
-<stop offset="0.95" stop-color="${GROUND}" stop-opacity="0.82"/>
+<stop offset="0" stop-color="${GROUND}" stop-opacity="0.58"/>
+<stop offset="0.95" stop-color="${GROUND}" stop-opacity="0.58"/>
 <stop offset="1" stop-color="${GROUND}" stop-opacity="0"/>
 </linearGradient>
 <radialGradient id="wg">
