@@ -185,7 +185,7 @@ export function auroraAt(now: number): number {
 // an aurora. The middle, where the words are, stays the plain near-black ground.
 const GROUND = '#070707'
 
-export function simple(percent: number, now = 0, steps = 0, busy = false, drawAurora = false, fireAge = 999, band = true, life = 99999): string {
+export function simple(percent: number, now = 0, steps = 0, busy = false, drawAurora = false, fireAge = 999, band = true, life = 99999, tap = 0, tapAge = 99): string {
   const s = clamp(percent / 100)
   const cap = 0.16 + 0.42 * s
   // Rolling snow across the whole foot of the window: it starts a clear band above
@@ -321,10 +321,14 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
   // over each group of pines, with its name beside it (brighter under the
   // pointer). They take turns, so the whole list comes round.
   let sky = ''
-  if (hash(slot + 41) < 0.7) {
-    const first = Math.floor(hash(slot + 43) * ATLAS.length)
-    const second = (first + 1 + Math.floor(hash(slot + 47) * (ATLAS.length - 1))) % ATLAS.length
-    sky = constellation(ATLAS[first]!, 345, 215, 'cn') + constellation(ATLAS[second]!, 1405, 400, 'cn c2')
+  // A new pair every quarter of an hour, so the whole atlas comes round.
+  const round = Math.floor(now / 900000)
+  if (hash(round + 41) < 0.85) {
+    const first = Math.floor(hash(round + 43) * ATLAS.length)
+    const second = (first + 1 + Math.floor(hash(round + 47) * (ATLAS.length - 1))) % ATLAS.length
+    // A click on the sky shows the constellation on that side for a few seconds.
+    const on = tapAge < 9 ? tap : 0
+    sky = constellation(ATLAS[first]!, 345, 215, on === 1 ? 'cn on' : 'cn') + constellation(ATLAS[second]!, 1405, 400, on === 2 ? 'cn c2 on' : 'cn c2')
   }
 
   // Without the shader the aurora is drawn here instead, more simply: the
@@ -437,6 +441,8 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
 .cn text{opacity:0;animation:cn 96s ease-in-out infinite${since(96, 77)}}
 .cn .ln{opacity:0;animation:cl 96s ease-in-out infinite${since(96, 77)}}
 .c2 text,.c2 .ln{animation-delay:-${R(((lived + 29) % 96) * 100) / 100}s}
+.on text,.on .ln{animation:on 9s ease-out both;animation-delay:-${R(Math.max(0, tapAge) * 10) / 10}s;stroke-dashoffset:0}
+@keyframes on{0%{opacity:0}6%,82%{opacity:0.75}100%{opacity:0}}
 .cn:hover text{animation:none;opacity:1}
 .cn:hover .ln{animation:none;opacity:0.6}
 @keyframes cn{0%,86%,100%{opacity:0}90%,96%{opacity:0.3}}

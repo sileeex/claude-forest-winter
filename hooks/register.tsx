@@ -39,6 +39,13 @@ const main = atom({ plugin: 'forest-winter', key: 'main' } as const, false)
 // When this chat was opened (epoch ms): the fox and the owl arrive then.
 const born = atom({ plugin: 'forest-winter', key: 'born' } as const, 0)
 
+// Commands Claude left running in the background, by task id: the fire
+// burns for them too.
+const jobs = atom({ plugin: 'forest-winter', key: 'jobs' } as const, [] as string[])
+
+// The last click on the sky: which side (1 left, 2 right) and when.
+const tapped = atom({ plugin: 'forest-winter', key: 'tapped' } as const, { side: 0, at: 0 })
+
 // Messages sent in this conversation: the footprints across the snow.
 const steps = atom({ plugin: 'forest-winter', key: 'steps' } as const, 0)
 
@@ -89,9 +96,10 @@ async function agentsAtWork($: EngineInterface, except?: string) {
   }
 }
 
-// The fire burns while the main turn runs or any agent is still working.
+// The fire burns while the main turn runs, or an agent or a background
+// command is still working.
 async function tend($: EngineInterface, ended?: string) {
-  await kindle($, (await read($, main)) || (await agentsAtWork($, ended)))
+  await kindle($, (await read($, main)) || (await read($, jobs)).length > 0 || (await agentsAtWork($, ended)))
 }
 
 export const register: Register = (on, options) => {
@@ -103,6 +111,7 @@ export const register: Register = (on, options) => {
     await setLook($)
     const opened = await $.clock.now()
     await update($, born, old => (old === 0 ? opened : old))
+    await update($, jobs, () => [])
     const { context } = await $.session.usage()
     await update($, fill, () => Math.round((context.percent ?? 0) / 2) * 2)
 
@@ -122,6 +131,43 @@ export const register: Register = (on, options) => {
       await update($, main, () => false)
     }
     await tend($, e.agentId)
+
+    return next(e)
+  })
+
+  // A command sent to the background keeps the fire alight until the
+  // notification that it has ended comes in.
+  on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
+    const out = await next(e)
+    const result = out.result as { backgroundTaskId?: unknown } | undefined
+    const id = typeof result?.backgroundTaskId === 'string' ? result.backgroundTaskId : ''
+    if (id !== '') {
+      await update($, jobs, list => (list.includes(id) ? list : [...list.slice(-7), id]))
+      await kindle($, true)
+    }
+
+    return out
+  })
+
+  on('session.receive', async ($, e, next) => {
+    if (e.origin.kind === 'task-notification') {
+      const before = await read($, jobs)
+      const left = before.filter(id => !e.text.includes(id))
+      if (left.length !== before.length) {
+        await update($, jobs, () => left)
+        await tend($)
+      }
+    }
+
+    return next(e)
+  })
+
+  // A click on the bare sky names the constellation on that side.
+  on('ui.pointer', async ($, e, next) => {
+    if (e.scene === 'forest-winter' && e.y < 0.7) {
+      const at = await $.clock.now()
+      await update($, tapped, () => ({ side: e.x < 0.5 ? 1 : 2, at }))
+    }
 
     return next(e)
   })
@@ -155,9 +201,9 @@ export const register: Register = (on, options) => {
     const { Shader, Svg } = $.ui.resolve(e)
     // Everything the drawing needs is asked for at once, so a chat that is
     // switched to gets its scene as soon as it can.
-    const [p, now, since, walked, lit, opened] = await Promise.all([read($, fill), $.clock.now(), read($, turned), read($, steps), read($, busy), read($, born)])
+    const [p, now, since, walked, lit, opened, tap] = await Promise.all([read($, fill), $.clock.now(), read($, turned), read($, steps), read($, busy), read($, born), read($, tapped)])
     // The dark band behind the list of chats is for the desktop app alone.
-    const source = simple(p, now, walked, lit, false, since === 0 ? 999 : (now - since) / 1000, e.surface === 'desktop', opened === 0 ? 99999 : (now - opened) / 1000)
+    const source = simple(p, now, walked, lit, false, since === 0 ? 999 : (now - since) / 1000, e.surface === 'desktop', opened === 0 ? 99999 : (now - opened) / 1000, tap.side, (now - tap.at) / 1000)
     const alt = `Snowy pines in the corners at night, snow at ${p}%`
     if (!useShader) {
       return <Svg source={source} alt={alt} isInteractive />
