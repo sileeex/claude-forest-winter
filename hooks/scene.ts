@@ -168,7 +168,7 @@ function constellation(con: Constellation, cx: number, cy: number, cls: string):
       }
     }
   }
-  return `<g class="${cls}"><title>${name}</title><rect x="${cx - 130}" y="${cy - 110}" width="260" height="240" fill="#000000" fill-opacity="0"/><path class="ln" pathLength="1" stroke-dasharray="1" d="${lines}" fill="none" stroke="#e6e8ec" stroke-width="0.8"/>${dots}<text x="${cx}" y="${cy + 124}" text-anchor="middle" font-family="sans-serif" font-size="15" letter-spacing="1.5" fill="#e6e8ec">${name}</text></g>`
+  return `<g class="${cls}"><title>${name}</title><rect x="${cx - 130}" y="${cy - 110}" width="260" height="240" fill="#000000" fill-opacity="0"/><path class="ln" pathLength="1" stroke-dasharray="1" d="${lines}" fill="none" stroke="#e6e8ec" stroke-width="0.8"/>${dots}<text x="${cx}" y="${cy + 118}" text-anchor="middle" font-family="sans-serif" font-size="11" letter-spacing="1.8" fill="#e6e8ec">${name}</text></g>`
 }
 
 // Whether the aurora shows at `now`: rarely, about one three-hour slot in
@@ -276,9 +276,11 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
     for (let k = 0; k < 12; k++) {
       const wx = gx + 30 + k * 25
       const wy = R(snowTop(wx) + 20 + (k % 2) * 4)
-      came += `<ellipse cx="${wx}" cy="${wy}" rx="2.1" ry="1.3"/><circle cx="${wx - 2.6}" cy="${wy - 1.2}" r="0.7"/><circle cx="${wx - 3.2}" cy="${wy + 0.4}" r="0.7"/>`
+      // Each print is left as the fox passes over it, not all at once.
+      const left = trot === '' ? '' : ` class="pr" style="animation-delay:${R((6.44 * (1 - (wx - gx + 26) / 340) - lived) * 10) / 10}s"`
+      came += `<g${left}><ellipse cx="${wx}" cy="${wy}" rx="2.1" ry="1.3"/><circle cx="${wx - 2.6}" cy="${wy - 1.2}" r="0.7"/><circle cx="${wx - 3.2}" cy="${wy + 0.4}" r="0.7"/></g>`
     }
-    fox = `<g fill="#6f757f"><g class="si" style="animation-delay:-${lived}s"><g opacity="0.65">${came}</g></g><g class="fp">${away}</g></g><g class="si" style="animation-delay:-${lived}s">${sit(gx, 'fa')}</g>${trot}` + sit(532, 'fb')
+    fox = `<g fill="#6f757f"><g opacity="0.65">${came}</g><g class="fp">${away}</g></g><g class="si" style="animation-delay:-${lived}s">${sit(gx, 'fa')}</g>${trot}` + sit(532, 'fb')
   }
   // In a new chat the owl glides in over the pines and lands, a few seconds
   // after the fox.
@@ -437,14 +439,16 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
 .c2 text,.c2 .ln{animation-delay:-${R(((lived + 29) % 96) * 100) / 100}s}
 .cn:hover text{animation:none;opacity:1}
 .cn:hover .ln{animation:none;opacity:0.6}
-@keyframes cn{0%,86%,100%{opacity:0}90%,96%{opacity:0.55}}
+@keyframes cn{0%,86%,100%{opacity:0}90%,96%{opacity:0.3}}
 @keyframes cl{0%,80%{opacity:0;stroke-dashoffset:1}81%{opacity:0.5;stroke-dashoffset:1}89%,96%{opacity:0.5;stroke-dashoffset:0}100%{opacity:0;stroke-dashoffset:0}}
 .fa{animation:fa 1200s linear infinite${since(1200)}}
 .fb{opacity:0;animation:fb 1200s linear infinite${since(1200)}}
 .fp{opacity:0;animation:fp 1200s linear infinite${since(1200)}}
 .wk{animation:wk 7s linear both}
+.pr{animation:pr 0.5s ease-out both}
+@keyframes pr{from{opacity:0}to{opacity:1}}
 .si{animation:si 7s linear both}
-@keyframes si{0%,96%{opacity:0}100%{opacity:1}}
+@keyframes si{0%,90%{opacity:0}98%,100%{opacity:1}}
 .wb{animation:wb 0.34s ease-in-out infinite alternate}
 @keyframes wb{from{transform:translateY(0px)}to{transform:translateY(-1.8px)}}
 .lg{animation:lg 0.34s ease-in-out infinite alternate}
@@ -481,7 +485,7 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
 @keyframes bk{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(0.08)}}
 .sl{animation:sl 41s ease-in infinite${at(41)};opacity:0}
 @keyframes sl{0%{transform:translate(0px,0px);opacity:0}1%{opacity:1}6%{transform:translate(${R(blow / 9)}px,330px);opacity:0.9}7%,100%{transform:translate(${R(blow / 9)}px,345px);opacity:0}}
-@keyframes wk{0%{transform:translate(340px,${R(snowTop(814) - snowTop(474))}px);opacity:0}7%{opacity:1}50%{transform:translate(170px,${R(snowTop(644) - snowTop(474))}px)}97%{opacity:1}100%{transform:translate(0px,0px);opacity:0}}
+@keyframes wk{0%{transform:translate(340px,${R(snowTop(814) - snowTop(474))}px);opacity:0}7%{opacity:1}50%{transform:translate(170px,${R(snowTop(644) - snowTop(474))}px)}92%{transform:translate(0px,0px);opacity:1}100%{transform:translate(0px,0px);opacity:0}}
 @keyframes shoot{0%{transform:translate(1180px,60px) scale(0.2);opacity:0}0.05%{opacity:1}0.3%{transform:translate(760px,222px) scale(1);opacity:1}0.42%{transform:translate(610px,280px) scale(0.5);opacity:0}100%{transform:translate(610px,280px) scale(0.5);opacity:0}}
 @keyframes shoot2{0%{transform:translate(560px,40px) scale(0.2);opacity:0}0.03%{opacity:0.9}0.15%{transform:translate(300px,150px) scale(0.8);opacity:0.9}0.21%{transform:translate(200px,192px) scale(0.4);opacity:0}100%{transform:translate(200px,192px) scale(0.4);opacity:0}}
 </style>
