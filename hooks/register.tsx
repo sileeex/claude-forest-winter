@@ -151,7 +151,8 @@ export const register: Register = (on, options) => {
     // Everything the drawing needs is asked for at once, so a chat that is
     // switched to gets its scene as soon as it can.
     const [p, now, since, walked, lit] = await Promise.all([read($, fill), $.clock.now(), read($, turned), read($, steps), read($, busy)])
-    const source = simple(p, now, walked, lit, false, since === 0 ? 999 : (now - since) / 1000)
+    // The dark band behind the list of chats is for the desktop app alone.
+    const source = simple(p, now, walked, lit, false, since === 0 ? 999 : (now - since) / 1000, e.surface === 'desktop')
     const alt = `Snowy pines in the corners at night, snow at ${p}%`
     if (!useShader) {
       return <Svg source={source} alt={alt} isInteractive />
