@@ -168,7 +168,7 @@ function constellation(con: Constellation, cx: number, cy: number, cls: string):
       }
     }
   }
-  return `<g class="${cls}"><title>${name}</title><rect x="${cx - 130}" y="${cy - 110}" width="260" height="240" fill="#000000" fill-opacity="0"/><path class="ln" d="${lines}" fill="none" stroke="#e6e8ec" stroke-width="0.8"/>${dots}<text x="${cx}" y="${cy + 124}" text-anchor="middle" font-family="sans-serif" font-size="15" letter-spacing="1.5" fill="#e6e8ec">${name}</text></g>`
+  return `<g class="${cls}"><title>${name}</title><rect x="${cx - 130}" y="${cy - 110}" width="260" height="240" fill="#000000" fill-opacity="0"/><path class="ln" pathLength="1" stroke-dasharray="1" d="${lines}" fill="none" stroke="#e6e8ec" stroke-width="0.8"/>${dots}<text x="${cx}" y="${cy + 124}" text-anchor="middle" font-family="sans-serif" font-size="15" letter-spacing="1.5" fill="#e6e8ec">${name}</text></g>`
 }
 
 // Whether the aurora shows at `now`: rarely, about one three-hour slot in
@@ -185,12 +185,12 @@ export function auroraAt(now: number): number {
 // an aurora. The middle, where the words are, stays the plain near-black ground.
 const GROUND = '#070707'
 
-export function simple(percent: number, now = 0, steps = 0, busy = false, drawAurora = false, fireAge = 999, band = true): string {
+export function simple(percent: number, now = 0, steps = 0, busy = false, drawAurora = false, fireAge = 999, band = true, life = 99999): string {
   const s = clamp(percent / 100)
   const cap = 0.16 + 0.42 * s
-  // Rolling snow across the whole foot of the window: it starts level with
-  // the top of the message box and rises with the context.
-  const ground = H * (0.075 + 0.1 * s)
+  // Rolling snow across the whole foot of the window: it starts a clear band above
+  // the message box (never a thin sliver beside it) and rises with the context.
+  const ground = H * (0.108 + 0.1 * s)
   // On the snow: faint crests where the drifts catch the moon, and a few
   // grains that glint.
   const sr = rng(57)
@@ -198,15 +198,20 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
   const glints = ['', '']
   for (let k = 0; k < 9; k++) {
     const cx = R(sr() * W)
-    const cy = R(H - ground + 18 + sr() * (ground - 30))
+    const cy = R(H - ground + 16 + sr() * Math.max(6, ground - 74))
     const cw = R(50 + sr() * 110)
     crests += `M${cx} ${cy}q${R(cw / 2)} ${-R(5 + sr() * 7)} ${cw} 0`
   }
   for (let k = 0; k < 26; k++) {
     glints[k % 2] += `<circle cx="${R(sr() * W)}" cy="${R(H - ground + 14 + sr() * (ground - 20))}" r="${R((0.7 + sr() * 0.9) * 10) / 10}"/>`
   }
-  const detail = `<path d="${crests}" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.28"/><g fill="#ffffff"><g class="tw" style="animation-duration:3.4s">${glints[0]}</g><g class="tw" style="animation-duration:5.2s;animation-delay:-2s">${glints[1]}</g></g>`
+  const detail = `<path d="${crests}" fill="none" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" opacity="0.15"/><g fill="#ffffff"><g class="tw" style="animation-duration:3.4s">${glints[0]}</g><g class="tw" style="animation-duration:5.2s;animation-delay:-2s">${glints[1]}</g></g>`
   const fill = (inner: string) => `<svg width="100%" height="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax slice">${inner}</svg>`
+  // `life` is how many seconds this chat has been open: the fox, the owl and
+  // the constellations make their entrance on it, once, however often the
+  // scene is redrawn.
+  const lived = R(Math.max(0, life) * 10) / 10
+  const since = (period: number, shift = 0) => `;animation-delay:-${R(((lived + shift) % period) * 100) / 100}s`
   const at = (period: number) => `;animation-delay:-${R(((now / 1000) % period) * 100) / 100}s`
 
   // The moon's color: it lights the pines too.
@@ -256,23 +261,33 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
   if (hash(slot + 31) < 0.85) {
     const sit = (gx: number, cls: string) => `<g class="${cls}"><g transform="translate(${gx} ${R(snowTop(gx) + 4)}) scale(-1.2 1.2)"><g class="tl"><path d="M-9 -3C-30 4 -47 -8 -42 -30C-39 -18 -30 -12 -15 -13Z" fill="#a4521f"/><path d="M-42 -30C-48 -20 -44 -8 -34 -4C-40 -12 -41 -21 -42 -30Z" fill="#f1ede4"/></g><path d="M-13 0C-22 -6 -20 -27 -7 -35C2 -40 11 -33 13 -22C15 -12 13 -4 13 0Z" fill="#c96a2b"/><path d="M-13 0C-20 -6 -19 -22 -12 -30C-15 -19 -13 -8 -6 0Z" fill="#a4521f"/><ellipse cx="-6" cy="-1.2" rx="7.5" ry="2.8" fill="#a4521f"/><path d="M1 -31C7 -27 10 -18 9 -7C5 -5 0 -8 -1 -15C-2 -23 -1 -28 1 -31Z" fill="#f1ede4"/><path d="M3.4 -13L3 -1.2h3.6L7.2 -13ZM9 -13L9.4 -1.2h3.6L12.4 -13Z" fill="#2a1d17"/><ellipse cx="5" cy="-0.8" rx="2.9" ry="1.5" fill="#2a1d17"/><ellipse cx="11.4" cy="-0.8" rx="2.9" ry="1.5" fill="#2a1d17"/><path d="M-5 -50L-8 -66L4 -57ZM10 -57L18 -68L19 -52Z" fill="#c96a2b"/><path d="M-4 -53L-6 -62L1 -57ZM12 -57L17 -64L17 -55Z" fill="#2a1d17"/><path d="M-7 -44C-7 -55 4 -59 13 -55C20 -52 21 -42 17 -37L8 -29L-2 -36C-6 -38 -7 -41 -7 -44Z" fill="#c96a2b"/><path d="M-6 -41C-3 -37 1 -37 5 -40C7 -37 12 -36 17 -38L8 -29L-2 -36C-4 -37 -6 -39 -6 -41Z" fill="#f1ede4"/><g class="bk" style="animation-duration:5.3s"><ellipse cx="1.5" cy="-45.5" rx="1.5" ry="2"/><ellipse cx="12" cy="-45.5" rx="1.5" ry="2"/><circle cx="2" cy="-46.2" r="0.55" fill="#ffffff"/><circle cx="12.5" cy="-46.2" r="0.55" fill="#ffffff"/></g><ellipse cx="8" cy="-31" rx="1.7" ry="1.3"/></g></g>`
     const gx = 474
-    let paws = ''
-    for (let k = 1; k <= 9; k++) {
-      const wx = gx + 6 - k * 14
-      const wy = R(snowTop(wx) + 26 + (k % 2) * 3 + Math.max(0, 16 - Math.abs(wx - 400) / 3))
-      paws += `<ellipse cx="${wx}" cy="${wy}" rx="2.1" ry="1.3"/><circle cx="${wx + 2.6}" cy="${wy - 1.2}" r="0.7"/><circle cx="${wx + 3.2}" cy="${wy + 0.4}" r="0.7"/>`
-    }
     let away = ''
     for (let k = 0; k < 11; k++) {
       const wx = 548 + k * 21
       const wy = R(snowTop(wx) + 30 + (k % 2) * 4)
       away += `<ellipse cx="${wx}" cy="${wy}" rx="2.1" ry="1.3"/><circle cx="${wx + 2.6}" cy="${wy - 1.2}" r="0.7"/><circle cx="${wx + 3.2}" cy="${wy + 0.4}" r="0.7"/>`
     }
-    fox = `<g fill="#6f757f"><g opacity="0.65">${paws}</g><g class="fp">${away}</g></g>` + sit(gx, 'fa') + sit(532, 'fb')
+    // In a new chat it trots in from the dark, leaving its tracks, and sits down.
+    const leg = (x: number, back: boolean) => `<path class="lg" style="transform-origin:${x}px -13px${back ? ';animation-direction:alternate-reverse' : ''}" d="M${x} -13V-0.5" stroke="#2a1d17" stroke-width="3.4" stroke-linecap="round"/>`
+    const trot = lived < 8
+      ? `<g transform="translate(${gx} ${R(snowTop(gx) + 4)})"><g class="wk" style="animation-delay:-${lived}s"><g transform="scale(1.2)"><g class="wb"><path d="M20 -19C34 -17 44 -23 51 -31C48 -21 39 -12 22 -11Z" fill="#a4521f"/><path d="M51 -31C50 -26 46 -20 40 -17C45 -21 49 -25 51 -31Z" fill="#f1ede4"/>${leg(-11, false)}${leg(15, true)}<ellipse cx="3" cy="-18" rx="21" ry="8.5" fill="#c96a2b"/><path d="M-13 -12C-4 -9 8 -9 19 -12C10 -8 -4 -8 -13 -12Z" fill="#f1ede4"/>${leg(-6, true)}${leg(20, false)}<path d="M-24 -34L-25 -47L-17 -37ZM-16 -35L-14 -47L-9 -34Z" fill="#c96a2b"/><path d="M-10 -24C-12 -34 -22 -38 -30 -33L-42 -25L-30 -21C-22 -19 -13 -19 -10 -24Z" fill="#c96a2b"/><path d="M-42 -25L-30 -21C-25 -20 -20 -20 -16 -22C-22 -25 -30 -26 -42 -25Z" fill="#f1ede4"/><circle cx="-41.5" cy="-25" r="1.5" fill="#000000"/><ellipse cx="-27" cy="-29.5" rx="1.3" ry="1.7" fill="#000000"/></g></g></g></g>`
+      : ''
+    let came = ''
+    for (let k = 0; k < 12; k++) {
+      const wx = gx + 30 + k * 25
+      const wy = R(snowTop(wx) + 20 + (k % 2) * 4)
+      came += `<ellipse cx="${wx}" cy="${wy}" rx="2.1" ry="1.3"/><circle cx="${wx - 2.6}" cy="${wy - 1.2}" r="0.7"/><circle cx="${wx - 3.2}" cy="${wy + 0.4}" r="0.7"/>`
+    }
+    fox = `<g fill="#6f757f"><g class="si" style="animation-delay:-${lived}s"><g opacity="0.65">${came}</g></g><g class="fp">${away}</g></g><g class="si" style="animation-delay:-${lived}s">${sit(gx, 'fa')}</g>${trot}` + sit(532, 'fb')
   }
+  // In a new chat the owl glides in over the pines and lands, a few seconds
+  // after the fox.
+  const flight = lived < 14.5
+    ? `<g transform="translate(395 592)"><g class="fy" style="animation-delay:${R((9 - lived) * 10) / 10}s"><g class="wg"><path d="M2 -1Q8 -22 27 -25Q18 -9 10 2Z" fill="#6f604e"/></g><ellipse cx="2" cy="0" rx="11" ry="6.5" fill="#5c4d3e"/><circle cx="-8" cy="-2.5" r="5.8" fill="#6f604e"/><circle cx="-10.5" cy="-3.2" r="1.7" fill="#f2c94c"/><circle cx="-10.8" cy="-3.2" r="0.8"/><path d="M-13.5 -1l-2.4 1.4l2.6 0.8Z" fill="#d9a441"/><g class="wg"><path d="M0 0Q6 -24 26 -28Q16 -10 9 3Z" fill="#473b30"/></g></g></g>`
+    : ''
   // The owl sits on the very tip of the small pine, a pad of snow under its claws.
   const owl = hash(slot + 33) < 0.12
-    ? `<g transform="translate(395 592)"><ellipse cx="0" cy="18.5" rx="9" ry="3.2" fill="#eceef1"/><path d="M-9 -11L-11 -19L-4 -14ZM9 -11L11 -19L4 -14Z" fill="#5c4d3e"/><ellipse cx="0" cy="0" rx="11" ry="15" fill="#5c4d3e"/><path d="M-11 -2Q-14 6 -9 13Q-8 4 -11 -2ZM11 -2Q14 6 9 13Q8 4 11 -2Z" fill="#473b30"/><ellipse cx="0" cy="4" rx="7" ry="10" fill="#8a7862"/><path d="M-4 1l1.5 2l1.5 -2M1 1l1.5 2l1.5 -2M-2.5 6l1.5 2l1.5 -2M-4 10l1.5 2l1.5 -2M1 10l1.5 2l1.5 -2" stroke="#5c4d3e" stroke-width="0.9" fill="none"/><circle cx="-4.2" cy="-7" r="4.3" fill="#6f604e"/><circle cx="4.2" cy="-7" r="4.3" fill="#6f604e"/><g class="bk"><circle cx="-4.2" cy="-7" r="3.2" fill="#f2c94c"/><circle cx="4.2" cy="-7" r="3.2" fill="#f2c94c"/><circle cx="-4.2" cy="-7" r="1.5"/><circle cx="4.2" cy="-7" r="1.5"/></g><path d="M0 -5l-1.6 3h3.2Z" fill="#d9a441"/><path d="M-5 14l-1.5 4M-3 15v3.5M3 15v3.5M5 14l1.5 4" stroke="#d9a441" stroke-width="1.3" stroke-linecap="round"/></g>`
+    ? `${flight}<g class="ol" style="animation-delay:${R((9 - lived) * 10) / 10}s"><g transform="translate(395 592)"><ellipse cx="0" cy="18.5" rx="9" ry="3.2" fill="#eceef1"/><path d="M-9 -11L-11 -19L-4 -14ZM9 -11L11 -19L4 -14Z" fill="#5c4d3e"/><ellipse cx="0" cy="0" rx="11" ry="15" fill="#5c4d3e"/><path d="M-11 -2Q-14 6 -9 13Q-8 4 -11 -2ZM11 -2Q14 6 9 13Q8 4 11 -2Z" fill="#473b30"/><ellipse cx="0" cy="4" rx="7" ry="10" fill="#8a7862"/><path d="M-4 1l1.5 2l1.5 -2M1 1l1.5 2l1.5 -2M-2.5 6l1.5 2l1.5 -2M-4 10l1.5 2l1.5 -2M1 10l1.5 2l1.5 -2" stroke="#5c4d3e" stroke-width="0.9" fill="none"/><circle cx="-4.2" cy="-7" r="4.3" fill="#6f604e"/><circle cx="4.2" cy="-7" r="4.3" fill="#6f604e"/><g class="bk"><circle cx="-4.2" cy="-7" r="3.2" fill="#f2c94c"/><circle cx="4.2" cy="-7" r="3.2" fill="#f2c94c"/><circle cx="-4.2" cy="-7" r="1.5"/><circle cx="4.2" cy="-7" r="1.5"/></g><path d="M0 -5l-1.6 3h3.2Z" fill="#d9a441"/><path d="M-5 14l-1.5 4M-3 15v3.5M3 15v3.5M5 14l1.5 4" stroke="#d9a441" stroke-width="1.3" stroke-linecap="round"/></g></g>`
     : ''
 
   // A campfire at the edge of the pines, on a ring of stones: burning while
@@ -417,14 +432,28 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
 .s2{animation:sway 8s ease-in-out infinite alternate${at(16)}}
 .f3{animation:fall 33s linear infinite${at(33)}}
 .s3{animation:sway 6s ease-in-out infinite alternate${at(12)}}
-.cn text,.cn .ln{opacity:0;animation:cn 96s ease-in-out infinite${at(96)}}
-.c2 text,.c2 .ln{animation-delay:-${R((((now / 1000) + 48) % 96) * 100) / 100}s}
+.cn text{opacity:0;animation:cn 96s ease-in-out infinite${since(96, 77)}}
+.cn .ln{opacity:0;animation:cl 96s ease-in-out infinite${since(96, 77)}}
+.c2 text,.c2 .ln{animation-delay:-${R(((lived + 29) % 96) * 100) / 100}s}
 .cn:hover text{animation:none;opacity:1}
 .cn:hover .ln{animation:none;opacity:0.6}
-@keyframes cn{0%,80%,100%{opacity:0}85%,95%{opacity:0.5}}
-.fa{animation:fa 1200s linear infinite${at(1200)}}
-.fb{opacity:0;animation:fb 1200s linear infinite${at(1200)}}
-.fp{opacity:0;animation:fp 1200s linear infinite${at(1200)}}
+@keyframes cn{0%,86%,100%{opacity:0}90%,96%{opacity:0.55}}
+@keyframes cl{0%,80%{opacity:0;stroke-dashoffset:1}81%{opacity:0.5;stroke-dashoffset:1}89%,96%{opacity:0.5;stroke-dashoffset:0}100%{opacity:0;stroke-dashoffset:0}}
+.fa{animation:fa 1200s linear infinite${since(1200)}}
+.fb{opacity:0;animation:fb 1200s linear infinite${since(1200)}}
+.fp{opacity:0;animation:fp 1200s linear infinite${since(1200)}}
+.wk{animation:wk 7s linear both}
+.si{animation:si 7s linear both}
+@keyframes si{0%,96%{opacity:0}100%{opacity:1}}
+.wb{animation:wb 0.34s ease-in-out infinite alternate}
+@keyframes wb{from{transform:translateY(0px)}to{transform:translateY(-1.8px)}}
+.lg{animation:lg 0.34s ease-in-out infinite alternate}
+@keyframes lg{from{transform:rotate(-26deg)}to{transform:rotate(26deg)}}
+.fy{animation:fy 5.5s cubic-bezier(0.2,0.6,0.3,1) both}
+@keyframes fy{0%{transform:translate(330px,-250px);opacity:0}6%{opacity:1}70%{transform:translate(40px,-52px)}96%{opacity:1}100%{transform:translate(0px,-8px);opacity:0}}
+.ol{animation:si 5.5s linear both}
+.wg{animation:wg 0.3s ease-in-out infinite alternate;transform-origin:4px 0px}
+@keyframes wg{from{transform:scaleY(1)}to{transform:scaleY(-0.55)}}
 @keyframes fa{0%,45%{opacity:1}45.25%,74.75%{opacity:0}75%,100%{opacity:1}}
 @keyframes fb{0%,45.3%{opacity:0}45.55%,60%{opacity:1}60.25%,100%{opacity:0}}
 @keyframes fp{0%,60%{opacity:0}60.4%,76%{opacity:0.65}82%,100%{opacity:0}}
@@ -452,6 +481,7 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
 @keyframes bk{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(0.08)}}
 .sl{animation:sl 41s ease-in infinite${at(41)};opacity:0}
 @keyframes sl{0%{transform:translate(0px,0px);opacity:0}1%{opacity:1}6%{transform:translate(${R(blow / 9)}px,330px);opacity:0.9}7%,100%{transform:translate(${R(blow / 9)}px,345px);opacity:0}}
+@keyframes wk{0%{transform:translate(340px,${R(snowTop(814) - snowTop(474))}px);opacity:0}7%{opacity:1}50%{transform:translate(170px,${R(snowTop(644) - snowTop(474))}px)}97%{opacity:1}100%{transform:translate(0px,0px);opacity:0}}
 @keyframes shoot{0%{transform:translate(1180px,60px) scale(0.2);opacity:0}0.05%{opacity:1}0.3%{transform:translate(760px,222px) scale(1);opacity:1}0.42%{transform:translate(610px,280px) scale(0.5);opacity:0}100%{transform:translate(610px,280px) scale(0.5);opacity:0}}
 @keyframes shoot2{0%{transform:translate(560px,40px) scale(0.2);opacity:0}0.03%{opacity:0.9}0.15%{transform:translate(300px,150px) scale(0.8);opacity:0.9}0.21%{transform:translate(200px,192px) scale(0.4);opacity:0}100%{transform:translate(200px,192px) scale(0.4);opacity:0}}
 </style>
@@ -479,7 +509,7 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
 </linearGradient>
 <linearGradient id="sb" x1="0" y1="0" x2="1" y2="0">
 <stop offset="0" stop-color="${GROUND}" stop-opacity="0.82"/>
-<stop offset="0.78" stop-color="${GROUND}" stop-opacity="0.82"/>
+<stop offset="0.95" stop-color="${GROUND}" stop-opacity="0.82"/>
 <stop offset="1" stop-color="${GROUND}" stop-opacity="0"/>
 </linearGradient>
 <radialGradient id="wg">
@@ -511,6 +541,6 @@ ${fill(drift(H - ground - 22, 12 + 8 * s, 1.3, 'url(#g1)'))}
 <svg overflow="visible" x="0" width="30%" height="100%" viewBox="0 0 ${ZW} ${H}" preserveAspectRatio="xMinYMax meet">${side(false)}${slide}</svg>
 <svg overflow="visible" x="70%" width="30%" height="100%" viewBox="0 0 ${ZW} ${H}" preserveAspectRatio="xMaxYMax meet">${side(true)}${owl}</svg>
 ${fill(drift(H - ground, 9 + 12 * s, 2.1, 'url(#g2)') + drift(H - ground + 34, 7 + 6 * s, 4.4, 'url(#g3)') + detail + prints + lantern + fox)}
-${band ? `<rect x="0" y="0" width="236" height="100%" fill="url(#sb)"/>` : ''}
+${band ? `<rect x="0" y="0" width="202" height="100%" fill="url(#sb)"/>` : ''}
 </svg>`
 }

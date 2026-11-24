@@ -36,6 +36,9 @@ const turned = atom({ plugin: 'forest-winter', key: 'turned' } as const, 0)
 // True while the main conversation's own turn runs.
 const main = atom({ plugin: 'forest-winter', key: 'main' } as const, false)
 
+// When this chat was opened (epoch ms): the fox and the owl arrive then.
+const born = atom({ plugin: 'forest-winter', key: 'born' } as const, 0)
+
 // Messages sent in this conversation: the footprints across the snow.
 const steps = atom({ plugin: 'forest-winter', key: 'steps' } as const, 0)
 
@@ -98,6 +101,8 @@ export const register: Register = (on, options) => {
 
   on('session.start', async ($, e, next) => {
     await setLook($)
+    const opened = await $.clock.now()
+    await update($, born, old => (old === 0 ? opened : old))
     const { context } = await $.session.usage()
     await update($, fill, () => Math.round((context.percent ?? 0) / 2) * 2)
 
@@ -150,9 +155,9 @@ export const register: Register = (on, options) => {
     const { Shader, Svg } = $.ui.resolve(e)
     // Everything the drawing needs is asked for at once, so a chat that is
     // switched to gets its scene as soon as it can.
-    const [p, now, since, walked, lit] = await Promise.all([read($, fill), $.clock.now(), read($, turned), read($, steps), read($, busy)])
+    const [p, now, since, walked, lit, opened] = await Promise.all([read($, fill), $.clock.now(), read($, turned), read($, steps), read($, busy), read($, born)])
     // The dark band behind the list of chats is for the desktop app alone.
-    const source = simple(p, now, walked, lit, false, since === 0 ? 999 : (now - since) / 1000, e.surface === 'desktop')
+    const source = simple(p, now, walked, lit, false, since === 0 ? 999 : (now - since) / 1000, e.surface === 'desktop', opened === 0 ? 99999 : (now - opened) / 1000)
     const alt = `Snowy pines in the corners at night, snow at ${p}%`
     if (!useShader) {
       return <Svg source={source} alt={alt} isInteractive />
