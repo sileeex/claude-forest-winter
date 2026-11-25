@@ -1,8 +1,8 @@
-# Forest Winter — a Claude Code mod
+# Forest Winter: an animated Claude Code theme and wallpaper
 
-A winter night behind your Claude chats: an animated theme and backdrop mod for the Claude desktop app (Code tab) and mobile app. One light vector drawing, no GPU needed.
+**Claude Forest Winter** is a free, open-source **Claude Code theme**: an animated winter forest **wallpaper** (background) behind your chats in the Claude desktop app (Code tab) and the Claude mobile app. Snowy pines, falling snow that piles up as your context fills, a campfire that burns while Claude works, a fox and a moon in its real phase. It is one light vector drawing, so it needs no GPU.
 
-![Forest Winter](assets/preview.gif)
+![Forest Winter, an animated winter wallpaper theme for Claude Code](assets/preview.gif)
 
 ## What it does
 
@@ -50,6 +50,10 @@ The backdrop is drawn in the desktop and mobile apps, not in the terminal.
 
 - With "reduce motion" on, the snow does not fall but still piles up.
 - `assets/forest-winter.svg` is the backdrop as a standalone animated SVG.
+
+## Fond d'écran animé pour Claude (en français)
+
+**Forest Winter** est un thème et un fond d'écran animé gratuit pour Claude Code et l'app Claude sur ordinateur : une forêt de sapins enneigés la nuit, de la neige qui monte avec le contexte de la conversation, un feu de camp qui brûle pendant que Claude travaille, un renard, une lune dans sa vraie phase et les 88 constellations. Installation : voir la section Install plus haut.
 
 ## License
 
