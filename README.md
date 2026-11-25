@@ -10,7 +10,7 @@ A winter night behind your Claude chats: an animated theme and backdrop mod for 
 - **The moon warns you.** It is drawn in tonight's real phase, sinks and turns amber at 60% context, then red at 85%.
 - **The campfire shows work.** It catches when you send a message, burns while Claude, a background agent or a background command is working, and dies down to embers once the answer is done.
 - **Footprints.** One more step across the snow for each message you send.
-- **A fox** trots in when you open a chat and sits by the fire; later it moves off, leaves tracks and comes back. **An owl**, on rare nights, glides in and lands on the tip of a pine.
+- **A fox** trots in when you open a chat and sits by the fire. A couple of minutes after the fire goes out it trots off into the dark, and it comes back when the fire is lit again. **An owl**, on rare nights, glides in and lands on the tip of a pine.
 - **All 88 constellations**, two at a time, with real star positions and magnitudes. A new pair every quarter of an hour. The lines draw themselves now and then, with the name in small print; click the sky to name the one on that side.
 - **Rare shooting stars**, wind that slants the snow, snow sliding off a branch.
 - A near-black theme with light text, and no blur or veil over the conversation.

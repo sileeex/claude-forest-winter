@@ -185,7 +185,7 @@ export function auroraAt(now: number): number {
 // an aurora. The middle, where the words are, stays the plain near-black ground.
 const GROUND = '#070707'
 
-export function simple(percent: number, now = 0, steps = 0, busy = false, drawAurora = false, fireAge = 999, band = true, life = 99999, tap = 0, tapAge = 99): string {
+export function simple(percent: number, now = 0, steps = 0, busy = false, drawAurora = false, fireAge = 999, band = true, life = 99999, tap = 0, tapAge = 99, foxAge = 99999, restAge = 0): string {
   const s = clamp(percent / 100)
   const cap = 0.16 + 0.42 * s
   // Rolling snow across the whole foot of the window: it starts a clear band above
@@ -257,8 +257,17 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
   // The fox, most of the time: it sits by the fire, moves a little further
   // off, slips away leaving its tracks, and comes back, all on one slow
   // twenty-minute round kept in step with the clock.
+  // It keeps the fire company: about two minutes after the fire has gone out
+  // (or after a new chat opens with no fire lit) it trots off into the dark,
+  // and comes back when the fire is lit again. `foxAge` is how long ago it
+  // last arrived, `restAge` how long the fire has been left.
+  const LEAVE = 120
+  const fa = R(Math.max(0, foxAge) * 10) / 10
+  const rest = busy ? 0 : R(Math.max(0, restAge) * 10) / 10
+  const leaving = rest >= LEAVE && rest < LEAVE + 7
+  const gone = rest >= LEAVE + 7
   let fox = ''
-  if (hash(slot + 31) < 0.85) {
+  if (hash(slot + 31) < 0.85 && !gone) {
     const sit = (gx: number, cls: string) => `<g class="${cls}"><g transform="translate(${gx} ${R(snowTop(gx) + 4)}) scale(-1.2 1.2)"><g class="tl"><path d="M-9 -3C-30 4 -47 -8 -42 -30C-39 -18 -30 -12 -15 -13Z" fill="#a4521f"/><path d="M-42 -30C-48 -20 -44 -8 -34 -4C-40 -12 -41 -21 -42 -30Z" fill="#f1ede4"/></g><path d="M-13 0C-22 -6 -20 -27 -7 -35C2 -40 11 -33 13 -22C15 -12 13 -4 13 0Z" fill="#c96a2b"/><path d="M-13 0C-20 -6 -19 -22 -12 -30C-15 -19 -13 -8 -6 0Z" fill="#a4521f"/><ellipse cx="-6" cy="-1.2" rx="7.5" ry="2.8" fill="#a4521f"/><path d="M1 -31C7 -27 10 -18 9 -7C5 -5 0 -8 -1 -15C-2 -23 -1 -28 1 -31Z" fill="#f1ede4"/><path d="M3.4 -13L3 -1.2h3.6L7.2 -13ZM9 -13L9.4 -1.2h3.6L12.4 -13Z" fill="#2a1d17"/><ellipse cx="5" cy="-0.8" rx="2.9" ry="1.5" fill="#2a1d17"/><ellipse cx="11.4" cy="-0.8" rx="2.9" ry="1.5" fill="#2a1d17"/><path d="M-5 -50L-8 -66L4 -57ZM10 -57L18 -68L19 -52Z" fill="#c96a2b"/><path d="M-4 -53L-6 -62L1 -57ZM12 -57L17 -64L17 -55Z" fill="#2a1d17"/><path d="M-7 -44C-7 -55 4 -59 13 -55C20 -52 21 -42 17 -37L8 -29L-2 -36C-6 -38 -7 -41 -7 -44Z" fill="#c96a2b"/><path d="M-6 -41C-3 -37 1 -37 5 -40C7 -37 12 -36 17 -38L8 -29L-2 -36C-4 -37 -6 -39 -6 -41Z" fill="#f1ede4"/><g class="bk" style="animation-duration:5.3s"><ellipse cx="1.5" cy="-45.5" rx="1.5" ry="2"/><ellipse cx="12" cy="-45.5" rx="1.5" ry="2"/><circle cx="2" cy="-46.2" r="0.55" fill="#ffffff"/><circle cx="12.5" cy="-46.2" r="0.55" fill="#ffffff"/></g><ellipse cx="8" cy="-31" rx="1.7" ry="1.3"/></g></g>`
     const gx = 474
     let away = ''
@@ -269,18 +278,26 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
     }
     // In a new chat it trots in from the dark, leaving its tracks, and sits down.
     const leg = (x: number, back: boolean) => `<path class="lg" style="transform-origin:${x}px -13px${back ? ';animation-direction:alternate-reverse' : ''}" d="M${x} -13V-0.5" stroke="#2a1d17" stroke-width="3.4" stroke-linecap="round"/>`
-    const trot = lived < 8
-      ? `<g transform="translate(${gx} ${R(snowTop(gx) + 4)})"><g class="wk" style="animation-delay:-${lived}s"><g transform="scale(1.2)"><g class="wb"><path d="M20 -19C34 -17 44 -23 51 -31C48 -21 39 -12 22 -11Z" fill="#a4521f"/><path d="M51 -31C50 -26 46 -20 40 -17C45 -21 49 -25 51 -31Z" fill="#f1ede4"/>${leg(-11, false)}${leg(15, true)}<ellipse cx="3" cy="-18" rx="21" ry="8.5" fill="#c96a2b"/><path d="M-13 -12C-4 -9 8 -9 19 -12C10 -8 -4 -8 -13 -12Z" fill="#f1ede4"/>${leg(-6, true)}${leg(20, false)}<path d="M-24 -34L-25 -47L-17 -37ZM-16 -35L-14 -47L-9 -34Z" fill="#c96a2b"/><path d="M-10 -24C-12 -34 -22 -38 -30 -33L-42 -25L-30 -21C-22 -19 -13 -19 -10 -24Z" fill="#c96a2b"/><path d="M-42 -25L-30 -21C-25 -20 -20 -20 -16 -22C-22 -25 -30 -26 -42 -25Z" fill="#f1ede4"/><circle cx="-41.5" cy="-25" r="1.5" fill="#000000"/><ellipse cx="-27" cy="-29.5" rx="1.3" ry="1.7" fill="#000000"/></g></g></g></g>`
+    const trot = !leaving && fa < 8
+      ? `<g transform="translate(${gx} ${R(snowTop(gx) + 4)})"><g class="wk" style="animation-delay:-${fa}s"><g transform="scale(1.2)"><g class="wb"><path d="M20 -19C34 -17 44 -23 51 -31C48 -21 39 -12 22 -11Z" fill="#a4521f"/><path d="M51 -31C50 -26 46 -20 40 -17C45 -21 49 -25 51 -31Z" fill="#f1ede4"/>${leg(-11, false)}${leg(15, true)}<ellipse cx="3" cy="-18" rx="21" ry="8.5" fill="#c96a2b"/><path d="M-13 -12C-4 -9 8 -9 19 -12C10 -8 -4 -8 -13 -12Z" fill="#f1ede4"/>${leg(-6, true)}${leg(20, false)}<path d="M-24 -34L-25 -47L-17 -37ZM-16 -35L-14 -47L-9 -34Z" fill="#c96a2b"/><path d="M-10 -24C-12 -34 -22 -38 -30 -33L-42 -25L-30 -21C-22 -19 -13 -19 -10 -24Z" fill="#c96a2b"/><path d="M-42 -25L-30 -21C-25 -20 -20 -20 -16 -22C-22 -25 -30 -26 -42 -25Z" fill="#f1ede4"/><circle cx="-41.5" cy="-25" r="1.5" fill="#000000"/><ellipse cx="-27" cy="-29.5" rx="1.3" ry="1.7" fill="#000000"/></g></g></g></g>`
+      : ''
+    // Off it goes, facing away, when the fire has been out a while.
+    const exit = leaving
+      ? `<g transform="translate(${gx} ${R(snowTop(gx) + 4)})"><g class="wo" style="animation-delay:-${R((rest - LEAVE) * 10) / 10}s"><g transform="scale(-1.2 1.2)"><g class="wb"><path d="M20 -19C34 -17 44 -23 51 -31C48 -21 39 -12 22 -11Z" fill="#a4521f"/><path d="M51 -31C50 -26 46 -20 40 -17C45 -21 49 -25 51 -31Z" fill="#f1ede4"/>${leg(-11, false)}${leg(15, true)}<ellipse cx="3" cy="-18" rx="21" ry="8.5" fill="#c96a2b"/><path d="M-13 -12C-4 -9 8 -9 19 -12C10 -8 -4 -8 -13 -12Z" fill="#f1ede4"/>${leg(-6, true)}${leg(20, false)}<path d="M-24 -34L-25 -47L-17 -37ZM-16 -35L-14 -47L-9 -34Z" fill="#c96a2b"/><path d="M-10 -24C-12 -34 -22 -38 -30 -33L-42 -25L-30 -21C-22 -19 -13 -19 -10 -24Z" fill="#c96a2b"/><path d="M-42 -25L-30 -21C-25 -20 -20 -20 -16 -22C-22 -25 -30 -26 -42 -25Z" fill="#f1ede4"/><circle cx="-41.5" cy="-25" r="1.5" fill="#000000"/><ellipse cx="-27" cy="-29.5" rx="1.3" ry="1.7" fill="#000000"/></g></g></g></g>`
       : ''
     let came = ''
     for (let k = 0; k < 12; k++) {
       const wx = gx + 30 + k * 25
       const wy = R(snowTop(wx) + 20 + (k % 2) * 4)
       // Each print is left as the fox passes over it, not all at once.
-      const left = trot === '' ? '' : ` class="pr" style="animation-delay:${R((6.44 * (1 - (wx - gx + 26) / 340) - lived) * 10) / 10}s"`
+      const left = trot !== ''
+        ? ` class="pr" style="animation-delay:${R((6.44 * (1 - (wx - gx + 26) / 340) - fa) * 10) / 10}s"`
+        : leaving ? ` class="pr" style="animation-delay:${R((6.5 * ((wx - gx + 26) / 340) - (rest - LEAVE)) * 10) / 10}s"` : ''
       came += `<g${left}><ellipse cx="${wx}" cy="${wy}" rx="2.1" ry="1.3"/><circle cx="${wx - 2.6}" cy="${wy - 1.2}" r="0.7"/><circle cx="${wx - 3.2}" cy="${wy + 0.4}" r="0.7"/></g>`
     }
-    fox = `<g fill="#6f757f"><g opacity="0.65">${came}</g><g class="fp">${away}</g></g><g class="si" style="animation-delay:-${lived}s">${sit(gx, 'fa')}</g>${trot}` + sit(532, 'fb')
+    fox = leaving
+      ? `<g fill="#6f757f"><g opacity="0.65">${came}</g></g><g class="sx" style="animation-delay:-${R((rest - LEAVE) * 10) / 10}s">${sit(gx, '')}</g>${exit}`
+      : `<g fill="#6f757f"><g opacity="0.65">${came}</g><g class="fp">${away}</g></g><g class="si" style="animation-delay:-${fa}s">${sit(gx, 'fa')}</g>${trot}` + sit(532, 'fb')
   }
   // In a new chat the owl glides in over the pines and lands, a few seconds
   // after the fox.
@@ -454,6 +471,10 @@ export function simple(percent: number, now = 0, steps = 0, busy = false, drawAu
 .pr{animation:pr 0.5s ease-out both}
 @keyframes pr{from{opacity:0}to{opacity:1}}
 .si{animation:si 7s linear both}
+.sx{animation:sx 7s linear both}
+@keyframes sx{0%{opacity:1}6%,100%{opacity:0}}
+.wo{animation:wo 7s linear both}
+@keyframes wo{0%{transform:translate(0px,0px);opacity:0}6%{opacity:1}50%{transform:translate(170px,${R(snowTop(644) - snowTop(474))}px)}93%{opacity:1}100%{transform:translate(340px,${R(snowTop(814) - snowTop(474))}px);opacity:0}}
 @keyframes si{0%,90%{opacity:0}98%,100%{opacity:1}}
 .wb{animation:wb 0.34s ease-in-out infinite alternate}
 @keyframes wb{from{transform:translateY(0px)}to{transform:translateY(-1.8px)}}

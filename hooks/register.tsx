@@ -46,6 +46,9 @@ const jobs = atom({ plugin: 'forest-winter', key: 'jobs' } as const, [] as strin
 // The last click on the sky: which side (1 left, 2 right) and when.
 const tapped = atom({ plugin: 'forest-winter', key: 'tapped' } as const, { side: 0, at: 0 })
 
+// When the fox last came back to the fire (epoch ms).
+const came = atom({ plugin: 'forest-winter', key: 'came' } as const, 0)
+
 // Messages sent in this conversation: the footprints across the snow.
 const steps = atom({ plugin: 'forest-winter', key: 'steps' } as const, 0)
 
@@ -82,6 +85,13 @@ async function kindle($: EngineInterface, lit: boolean) {
     return
   }
   const when = await $.clock.now()
+  // The fox had wandered off with the fire out: it comes back now.
+  if (lit) {
+    const [left, opened] = await Promise.all([read($, turned), read($, born)])
+    if (when - Math.max(left, opened) >= 120000) {
+      await update($, came, () => when)
+    }
+  }
   await update($, turned, () => when)
   await update($, busy, () => lit)
 }
@@ -201,9 +211,9 @@ export const register: Register = (on, options) => {
     const { Shader, Svg } = $.ui.resolve(e)
     // Everything the drawing needs is asked for at once, so a chat that is
     // switched to gets its scene as soon as it can.
-    const [p, now, since, walked, lit, opened, tap] = await Promise.all([read($, fill), $.clock.now(), read($, turned), read($, steps), read($, busy), read($, born), read($, tapped)])
+    const [p, now, since, walked, lit, opened, tap, back] = await Promise.all([read($, fill), $.clock.now(), read($, turned), read($, steps), read($, busy), read($, born), read($, tapped), read($, came)])
     // The dark band behind the list of chats is for the desktop app alone.
-    const source = simple(p, now, walked, lit, false, since === 0 ? 999 : (now - since) / 1000, e.surface === 'desktop', opened === 0 ? 99999 : (now - opened) / 1000, tap.side, (now - tap.at) / 1000)
+    const source = simple(p, now, walked, lit, false, since === 0 ? 999 : (now - since) / 1000, e.surface === 'desktop', opened === 0 ? 99999 : (now - opened) / 1000, tap.side, (now - tap.at) / 1000, (now - Math.max(opened, back)) / 1000, (now - Math.max(since, opened)) / 1000)
     const alt = `Snowy pines in the corners at night, snow at ${p}%`
     if (!useShader) {
       return <Svg source={source} alt={alt} isInteractive />
